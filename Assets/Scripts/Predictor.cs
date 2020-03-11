@@ -156,7 +156,7 @@ public class Predictor : MonoBehaviour
 		predictions = new List<Vector3>[stepCount];
 		grid = new GridPoint[stepCount][,];
 		var gridSize = gridSquareRadius * 2 + 1;
-		var projectiles = FindObjectsOfType<Projectile>();
+		var projectiles = FindObjectsOfType<LinearProjectile>();
 
 		for (var i = 0; i < stepCount; i++)
 		{
