@@ -22,7 +22,6 @@ public class LinearProjectile : MonoBehaviour
 		{
 			Direction = (-transform.position).normalized;
 			Direction = new Vector3(Direction.x, 0, Direction.z);
-			Debug.Log(Direction);
 		}
     }
 
@@ -36,10 +35,9 @@ public class LinearProjectile : MonoBehaviour
 		}
     }
 
-	private void OnDrawGizmos()
+	public LinearProjectilePrediction GetPrediction()
 	{
-		return;
-		var predictor = new LinearProjectilePrediction(
+		return new LinearProjectilePrediction(
 			origin: new Vector2(
 				transform.position.x,
 				transform.position.z
@@ -50,6 +48,11 @@ public class LinearProjectile : MonoBehaviour
 			),
 			speed: speed
 		);
+	}
+
+	private void OnDrawGizmos()
+	{
+		var predictor = GetPrediction();
 		var duration = 2;
 		var predictionCount = predictor.GetLerpLength(duration, 1);
 
@@ -59,7 +62,7 @@ public class LinearProjectile : MonoBehaviour
 			var time = i / (float)predictionCount * duration;
 			var prediction = predictor.GetPosition(time);
 			Gizmos.DrawWireSphere(
-				new Vector3(prediction.x, time * 10, prediction.y), 1 / Mathf.PI * 2
+				new Vector3(prediction.x, time, prediction.y), 1 / Mathf.PI * 2
 			);
 		}
 	}

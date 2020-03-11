@@ -11,6 +11,7 @@ namespace Mythic.Zilean
 	{
 		int GetLerpLength(float time, float resolution);
 		Vector2 GetPosition(float time);
+		bool DoesOverlap(float time, Vector3 point, float cellSize);
 	}
 
 	public class LinearProjectilePrediction: IPredictionProjectile
@@ -37,6 +38,19 @@ namespace Mythic.Zilean
 		public Vector2 GetPosition(float time)
 		{
 			return Speed * Direction * time + Origin;
+		}
+
+		public bool DoesOverlap(float time, Vector3 point, float cellSize)
+		{
+			// TODO: Actually do collision check for circle agains a square
+			// instead of just treating both as circles
+			// TODO: Use different padding/cell size for the time axis
+			var position = GetPosition(time);
+			var vec3 = new Vector3(position.x, time, position.y);
+			var collisionRadius = (
+				PredictionGrid.PROJECTILE_SIZE / 2 + cellSize
+			);
+			return Vector3.Distance(vec3, point) <= collisionRadius;
 		}
 	}
 
@@ -84,6 +98,19 @@ namespace Mythic.Zilean
 				Mathf.Sin(direction) * distance + Origin.y
 			);
 			return result;
+		}
+
+		public bool DoesOverlap(float time, Vector3 point, float cellSize)
+		{
+			// TODO: Actually do collision check for circle agains a square
+			// instead of just treating both as circles
+			// TODO: Use different padding/cell size for the time axis
+			var position = GetPosition(time);
+			var vec3 = new Vector3(position.x, time, position.y);
+			var collisionRadius = (
+				PredictionGrid.PROJECTILE_SIZE / 2 + cellSize
+			);
+			return Vector3.Distance(vec3, point) <= collisionRadius;
 		}
 	}
 }

@@ -24,7 +24,7 @@ public class WaveProjectile : MonoBehaviour
 		angle = Mathf.Atan2(-_startPosition.y, -_startPosition.x);
 	}
 
-	private float ElapsedTime
+	public float ElapsedTime
 	{
 		get { return Time.fixedTime - _starTime; }
 	}
@@ -60,16 +60,20 @@ public class WaveProjectile : MonoBehaviour
 		}
 	}
 
-	private void OnDrawGizmos()
+	public WaveProjectilePrediction GetPrediction()
 	{
-		return;
-		var predictor = new WaveProjectilePrediction(
+		return new WaveProjectilePrediction(
 			origin: _startPosition,
 			direction: Vector2.zero,
 			waveDuration: timeToCompleteWave,
 			waveAmplitude: amplitude,
 			waveLength: length
 		);
+	}
+
+	private void OnDrawGizmos()
+	{
+		var predictor = GetPrediction();
 		var duration = 2;
 		var predictionCount = predictor.GetLerpLength(duration, 1);
 
@@ -79,7 +83,7 @@ public class WaveProjectile : MonoBehaviour
 			var time = i / (float)predictionCount * duration;
 			var prediction = predictor.GetPosition(ElapsedTime + time);
 			Gizmos.DrawWireSphere(
-				new Vector3(prediction.x, time * 10, prediction.y), 1 / Mathf.PI * 2
+				new Vector3(prediction.x, time, prediction.y), 1 / Mathf.PI * 2
 			);
 		}
 	}
