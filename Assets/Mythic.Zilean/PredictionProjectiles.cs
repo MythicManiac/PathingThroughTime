@@ -11,7 +11,63 @@ namespace Mythic.Zilean
 	{
 		int GetLerpLength(float time, float resolution);
 		Vector2 GetPosition(float time);
-		bool DoesOverlap(float time, Vector3 point, float cellSize);
+		bool DoesOverlapWithCell(Vector3 own, Vector3 other, Vector3 cellSize);
+	}
+
+	public class Collision
+	{
+		public static bool DoesSphereCollideWithCube(
+			Vector3 sPos, float sRadius,
+			Vector3 cPos, Vector3 cSize
+		)
+		{
+			var cRadius = cSize / 2;
+			if (!(Mathf.Abs(sPos.x - cPos.x) <= sRadius + cRadius.x &&
+				Mathf.Abs(sPos.y - cPos.y) <= sRadius + cRadius.y &&
+				Mathf.Abs(sPos.z - cPos.z) <= sRadius + cRadius.z
+			))
+				return false;
+
+			var corner = new Vector3(
+				Mathf.Max(
+					cPos.x - cRadius.x, Mathf.Min(sPos.x, cPos.x + cRadius.z)),
+				Mathf.Max(
+					cPos.y - cRadius.y, Mathf.Min(sPos.y, cPos.y + cRadius.y)),
+				Mathf.Max(
+					cPos.z - cRadius.z, Mathf.Min(sPos.z, cPos.z + cRadius.z))
+			);
+			return Vector3.Distance(corner, sPos) <= sRadius;
+		}
+	}
+
+	public class StaticProjectilePrediction: IPredictionProjectile
+	{
+		public Vector2 Origin { get; private set; }
+		public float Radius { get; private set; }
+		
+		public StaticProjectilePrediction(Vector2 origin, float radius)
+		{
+			Origin = origin;
+			Radius = radius;
+		}
+
+		public int GetLerpLength(float time, float resolution)
+		{
+			return Mathf.CeilToInt(time / resolution);
+		}
+
+		public Vector2 GetPosition(float time)
+		{
+			return Origin;
+		}
+
+		public bool DoesOverlapWithCell(
+			Vector3 projectile, Vector3 cell, Vector3 cellSize)
+		{
+			return Collision.DoesSphereCollideWithCube(
+				projectile, Radius, cell, cellSize
+			);
+		}
 	}
 
 	public class LinearProjectilePrediction: IPredictionProjectile
@@ -19,13 +75,16 @@ namespace Mythic.Zilean
 		public Vector2 Origin { get; private set; }
 		public Vector2 Direction { get; private set; }
 		public float Speed { get; private set; }
+		public float Radius { get; private set; }
 
 		public LinearProjectilePrediction(
-			Vector2 origin, Vector2 direction, float speed)
+			Vector2 origin, Vector2 direction, float speed,
+			float radius)
 		{
 			Origin = origin;
 			Direction = direction;
 			Speed = speed;
+			Radius = radius;
 		}
 
 		public int GetLerpLength(float time, float resolution)
@@ -40,17 +99,12 @@ namespace Mythic.Zilean
 			return Speed * Direction * time + Origin;
 		}
 
-		public bool DoesOverlap(float time, Vector3 point, float cellSize)
+		public bool DoesOverlapWithCell(
+			Vector3 projectile, Vector3 cell, Vector3 cellSize)
 		{
-			// TODO: Actually do collision check for circle agains a square
-			// instead of just treating both as circles
-			// TODO: Use different padding/cell size for the time axis
-			var position = GetPosition(time);
-			var vec3 = new Vector3(position.x, time, position.y);
-			var collisionRadius = (
-				PredictionGrid.PROJECTILE_SIZE / 2 + cellSize
+			return Collision.DoesSphereCollideWithCube(
+				projectile, Radius, cell, cellSize
 			);
-			return Vector3.Distance(vec3, point) <= collisionRadius;
 		}
 	}
 
@@ -61,12 +115,17 @@ namespace Mythic.Zilean
 		public float WaveDuration { get; private set; }
 		public float WaveAmplitude { get; private set; }
 		public float WaveLength { get; private set; }
+		public float ElapsedTime { get; private set; }
+		public float Radius { get; private set; }
 
 		public WaveProjectilePrediction(
-			Vector2 origin, Vector2 direction,
-			float waveDuration, float waveAmplitude, float waveLength)
+			Vector2 origin, Vector2 direction, float elapsedTime,
+			float waveDuration, float waveAmplitude, float waveLength,
+			float radius)
 		{
 			Origin = origin;
+			ElapsedTime = elapsedTime;
+
 			var relativeDirection = (direction - origin);
 			TravelDirection = Mathf.Atan2(
 				relativeDirection.y,
@@ -75,6 +134,7 @@ namespace Mythic.Zilean
 			WaveDuration = waveDuration;
 			WaveAmplitude = waveAmplitude;
 			WaveLength = waveLength;
+			Radius = radius;
 		}
 
 		public int GetLerpLength(float time, float resolution)
@@ -85,6 +145,7 @@ namespace Mythic.Zilean
 
 		public Vector2 GetPosition(float time)
 		{
+			time = time + ElapsedTime;
 			var progress = time / WaveDuration * Mathf.PI * 2;
 			var wave = new Vector2(
 				progress * WaveLength,
@@ -100,17 +161,11 @@ namespace Mythic.Zilean
 			return result;
 		}
 
-		public bool DoesOverlap(float time, Vector3 point, float cellSize)
+		public bool DoesOverlapWithCell(Vector3 projectile, Vector3 cell, Vector3 cellSize)
 		{
-			// TODO: Actually do collision check for circle agains a square
-			// instead of just treating both as circles
-			// TODO: Use different padding/cell size for the time axis
-			var position = GetPosition(time);
-			var vec3 = new Vector3(position.x, time, position.y);
-			var collisionRadius = (
-				PredictionGrid.PROJECTILE_SIZE / 2 + cellSize
+			return Collision.DoesSphereCollideWithCube(
+				projectile, Radius, cell, cellSize
 			);
-			return Vector3.Distance(vec3, point) <= collisionRadius;
 		}
 	}
 }

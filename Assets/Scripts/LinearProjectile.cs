@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Mythic.Zilean;
 
-public class LinearProjectile : MonoBehaviour
+public class LinearProjectile : MonoBehaviour, IPredictorEnabled
 {
 	public float speed;
 	public float lifetime;
@@ -35,7 +35,7 @@ public class LinearProjectile : MonoBehaviour
 		}
     }
 
-	public LinearProjectilePrediction GetPrediction()
+	public IPredictionProjectile GetPrediction()
 	{
 		return new LinearProjectilePrediction(
 			origin: new Vector2(
@@ -46,24 +46,8 @@ public class LinearProjectile : MonoBehaviour
 				Direction.x,
 				Direction.z
 			),
-			speed: speed
+			speed: speed,
+			radius: 0.5f
 		);
-	}
-
-	private void OnDrawGizmos()
-	{
-		var predictor = GetPrediction();
-		var duration = 2;
-		var predictionCount = predictor.GetLerpLength(duration, 1);
-
-		Gizmos.color = Color.blue;
-		for (var i = 0; i < predictionCount; i++)
-		{
-			var time = i / (float)predictionCount * duration;
-			var prediction = predictor.GetPosition(time);
-			Gizmos.DrawWireSphere(
-				new Vector3(prediction.x, time, prediction.y), 1 / Mathf.PI * 2
-			);
-		}
 	}
 }

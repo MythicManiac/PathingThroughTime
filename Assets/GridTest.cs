@@ -7,8 +7,16 @@ public class GridTest : MonoBehaviour
 {
 	public float cellSize = 1;
 	public int gridSize = 1;
-	public float duration = 4;
-	public float timeStep = 0.5f;
+	public float duration = 8;
+	public float timeStep = 1f;
+	public float predictionResolution = 0.5f;
+
+	public bool debug = true;
+	public bool drawGridEmpty = false;
+	public bool drawGridFull = true;
+	public bool drawGridBounds = true;
+	public bool drawPredictions = true;
+	public bool drawGridPredictions = true;
 
 	private PredictionGrid _grid;
 
@@ -16,47 +24,49 @@ public class GridTest : MonoBehaviour
     {
 		_grid = new PredictionGrid(
 			cellSize, gridSize, duration, timeStep, new Vector2(
-				transform.position.x, transform.position.y
+				transform.position.x, transform.position.z
 			)
 		);
-		_grid.RecreateGrid();
     }
 
 	void FixedUpdate()
 	{
 		if (_grid == null)
-			return;
+			_grid = new PredictionGrid(
+				cellSize, gridSize, duration, timeStep, new Vector2(
+					transform.position.x, transform.position.z
+				)
+			);
 
-		_grid.RecreateGrid();
+		_grid.RebuildGrid(
+			cellSize, gridSize, duration, timeStep, new Vector2(
+				transform.position.x, transform.position.z
+			));
 
-		var linears = FindObjectsOfType<LinearProjectile>();
-		foreach(var linear in linears)
+		var projectileTypes = new IPredictorEnabled[][] {
+			FindObjectsOfType<LinearProjectile>(),
+			FindObjectsOfType<WaveProjectile>(),
+			FindObjectsOfType<StaticProjectile>()
+		};
+
+		foreach(var type in projectileTypes)
 		{
-			var predictor = linear.GetPrediction();
-			var predictionCount = predictor.GetLerpLength(duration, 1);
-			for (var i = 0; i < predictionCount; i++)
+			foreach (var projectile in type)
 			{
-				var time = i / predictionCount * duration;
-				_grid.MapToGrid(predictor, time);
-			}
-		}
-
-		var waves = FindObjectsOfType<WaveProjectile>();
-		foreach (var wave in waves)
-		{
-			var predictor = wave.GetPrediction();
-			var predictionCount = predictor.GetLerpLength(duration, 1);
-			for (var i = 0; i < predictionCount; i++)
-			{
-				var time = i / predictionCount * duration;
-				_grid.MapToGrid(predictor, time + wave.ElapsedTime);
+				var predictor = projectile.GetPrediction();
+				_grid.LerpMapToGrid(
+					predictor, duration, predictionResolution, debug
+				);
 			}
 		}
 	}
 
 	void OnDrawGizmos()
 	{
-		if(_grid != null)
-			_grid.DrawGizmos();
+		if(_grid != null && debug)
+			_grid.DrawGizmos(
+				drawGridFull, drawGridEmpty, drawGridBounds,
+				drawPredictions, drawGridPredictions
+			);
 	}
 }

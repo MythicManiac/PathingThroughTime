@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Mythic.Zilean;
 
-public class WaveProjectile : MonoBehaviour
+public class WaveProjectile : MonoBehaviour, IPredictorEnabled
 {
 	public float lifetime;
 	public float timeToCompleteWave = 1;
@@ -13,6 +13,7 @@ public class WaveProjectile : MonoBehaviour
 	
 	private float _starTime = 0;
 	private Vector2 _startPosition;
+	private Vector2 _direction;
 
 	private void Start()
 	{
@@ -21,6 +22,7 @@ public class WaveProjectile : MonoBehaviour
 			transform.position.x,
 			transform.position.z
 		);
+		_direction = -_startPosition.normalized;
 		angle = Mathf.Atan2(-_startPosition.y, -_startPosition.x);
 	}
 
@@ -60,31 +62,16 @@ public class WaveProjectile : MonoBehaviour
 		}
 	}
 
-	public WaveProjectilePrediction GetPrediction()
+	public IPredictionProjectile GetPrediction()
 	{
 		return new WaveProjectilePrediction(
 			origin: _startPosition,
-			direction: Vector2.zero,
+			direction: _direction,
+			elapsedTime: ElapsedTime,
 			waveDuration: timeToCompleteWave,
 			waveAmplitude: amplitude,
-			waveLength: length
+			waveLength: length,
+			radius: 0.5f
 		);
-	}
-
-	private void OnDrawGizmos()
-	{
-		var predictor = GetPrediction();
-		var duration = 2;
-		var predictionCount = predictor.GetLerpLength(duration, 1);
-
-		Gizmos.color = Color.blue;
-		for (var i = 0; i < predictionCount; i++)
-		{
-			var time = i / (float)predictionCount * duration;
-			var prediction = predictor.GetPosition(ElapsedTime + time);
-			Gizmos.DrawWireSphere(
-				new Vector3(prediction.x, time, prediction.y), 1 / Mathf.PI * 2
-			);
-		}
 	}
 }
