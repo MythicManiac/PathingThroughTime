@@ -68,6 +68,22 @@ namespace Mythic.Zilean
 		}
 
 
+		public static List<SpacetimePathFindNode> GetFullPathFromNode(
+			SpacetimePathFindNode node, bool ascendingOrder=true)
+		{
+			var result = new List<SpacetimePathFindNode>();
+			var current = node;
+			while (current != null)
+			{
+				result.Add(node);
+				current = current.parent;
+			}
+			if (ascendingOrder)
+				result.Reverse();
+			return result;
+		}
+
+
 		public static SpacetimePathFindNode FindPath(
 			in bool[,,] grid, GridCoords start, GridCoords target,
 			float cellSize, float cellTime, float movementSpeed,

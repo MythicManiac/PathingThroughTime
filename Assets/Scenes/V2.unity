@@ -353,14 +353,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   updatePath: 1
-  cellSize: 1
-  gridSize: 5
-  duration: 5
+  cellSize: 0.35
+  gridSize: 25
+  duration: 2
   timeStep: 0.5
   predictionResolution: 0.5
-  pathMovementSpeed: 5
+  playerMovementSpeed: 6
+  playerRadius: 0.5
   gridRefreshRate: 0.1
-  pathRefreshRate: 0.1
+  pathRefreshRate: 0.5
   debug: 1
   drawGridEmpty: 0
   drawGridFull: 0
@@ -396,9 +397,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cf00a69217c69964e9d4521b38e4b0c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spawnInterval: 1
-  spawnRadius: 25
-  spawnAmount: 5
+  spawnInterval: 5
+  spawnRadius: 40
+  spawnAmount: 10
   randomSpawnAmount: 0
   projectileSpeed: 8
   projectileLifetime: 10

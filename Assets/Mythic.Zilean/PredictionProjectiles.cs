@@ -129,18 +129,14 @@ namespace Mythic.Zilean
 		public float Radius { get; private set; }
 
 		public WaveProjectilePrediction(
-			Vector2 origin, Vector2 direction, float elapsedTime,
+			Vector2 origin, float angle, float elapsedTime,
 			float waveDuration, float waveAmplitude, float waveLength,
 			float radius)
 		{
 			Origin = origin;
 			ElapsedTime = elapsedTime;
 
-			var relativeDirection = (direction - origin);
-			TravelDirection = Mathf.Atan2(
-				relativeDirection.y,
-				relativeDirection.x
-			);
+			TravelDirection = angle;
 			WaveDuration = waveDuration;
 			WaveAmplitude = waveAmplitude;
 			WaveLength = waveLength;

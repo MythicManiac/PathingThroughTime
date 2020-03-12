@@ -124,10 +124,12 @@ namespace Mythic.Zilean
 		}
 
 		public SpacetimePathFindNode FindPath(
-			GridCoords source, GridCoords target, float movementSpeed)
+			GridCoords source, GridCoords target, float movementSpeed,
+			int maxSteps)
 		{
 			return SpacetimePathFinder.FindPath(
-				_grid, source, target, CellSize, TimeStep, movementSpeed
+				_grid, source, target, CellSize, TimeStep, movementSpeed,
+				maxSteps
 			);
 		}
 
@@ -160,7 +162,7 @@ namespace Mythic.Zilean
 
 		public void LerpMapToGrid(
 			IPredictionProjectile predictor, float duration, float resolution,
-			bool debug)
+			float playerBoundingBoxWidth, bool debug)
 		{
 			var predictionCount = predictor.GetLerpLength(duration, resolution);
 			predictionCount = Mathf.Max(
@@ -170,12 +172,12 @@ namespace Mythic.Zilean
 			for (var i = 0; i < predictionCount; i++)
 			{
 				var time = (float)i / predictionCount * duration;
-				MapToGrid(predictor, time, debug);
+				MapToGrid(predictor, time, playerBoundingBoxWidth, debug);
 			}
 		}
 
 		public void MapToGrid(IPredictionProjectile projectile, float time,
-			bool debug=false)
+			float playerBoundingBoxWidth, bool debug=false)
 		{
 			var position2d = projectile.GetPosition(time);
 			var position = new Vector3(position2d.x, time, position2d.y);
@@ -225,8 +227,11 @@ namespace Mythic.Zilean
 
 						var coords = _globalCoords[x, t, y];
 						var result = projectile.DoesOverlapWithCell(
-							position, coords, CellSize3D
-						);
+							position, coords, new Vector3(
+								CellSize3D.x + playerBoundingBoxWidth,
+								CellSize3D.y,
+								CellSize3D.z + playerBoundingBoxWidth
+						));
 
 						_grid[x, t, y] = result;
 					}

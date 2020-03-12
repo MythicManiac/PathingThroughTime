@@ -11,7 +11,10 @@ public class GridTest : MonoBehaviour
 	public float duration = 8;
 	public float timeStep = 1f;
 	public float predictionResolution = 0.5f;
-	public float pathMovementSpeed = 1f;
+
+	public float playerMovementSpeed = 6f;
+	public float playerRadius = 0.5f;
+	public int pathfindingMaxSteps = 10000;
 
 	public float gridRefreshRate = 1f;
 	public float pathRefreshRate = 1f;
@@ -27,12 +30,14 @@ public class GridTest : MonoBehaviour
 
 	private PredictionGrid _grid;
 	private SpacetimePathFindNode _path;
-	private List<Vector3> _pathNodes = new List<Vector3>();
+	private List<(Vector3, GridCoords)> _pathNodes =
+		new List<(Vector3, GridCoords)>();
 	private int _pathIndex;
 	private GridCoords _start;
 	private GridCoords _target;
 	private float _timeSinceLastGridRefresh;
 	private float _timeSinceLastPathRefresh;
+	private float _pathingTime;
 
     void Start()
     {
@@ -59,11 +64,15 @@ public class GridTest : MonoBehaviour
 			return;
 		}
 
-		var remainingDistance = pathMovementSpeed * Time.fixedDeltaTime;
+		var remainingDistance = playerMovementSpeed * Time.fixedDeltaTime;
 
-		while (remainingDistance > 0)
+		var currentLayer = Mathf.FloorToInt(_pathingTime / timeStep);
+		if (_pathNodes[_pathIndex].Item2.T < currentLayer)
+			Debug.Log("Waypoint is in the past!");
+
+		while (remainingDistance > 0 && currentLayer == _pathNodes[_pathIndex].Item2.T)
 		{
-			var node = _pathNodes[_pathIndex];
+			var (node, gridCoords) = _pathNodes[_pathIndex];
 			var waypointZeroed = new Vector3(node.x, 0, node.z);
 			var positionZeroed = new Vector3(transform.position.x, 0, transform.position.z);
 			var direction = (waypointZeroed - positionZeroed).normalized;
@@ -82,6 +91,8 @@ public class GridTest : MonoBehaviour
 			var movement = direction * movementDistance;
 			transform.position += movement;
 		}
+
+		_pathingTime += Time.fixedDeltaTime;
 	}
 
 	private void RefreshPath()
@@ -100,12 +111,15 @@ public class GridTest : MonoBehaviour
 			new Vector2(transform.position.x, transform.position.z),
 			0
 		);
-		_path = _grid.FindPath(_start, _target, pathMovementSpeed);
-		var pathNodes = new List<Vector3>();
+		_path = _grid.FindPath(
+			_start, _target, playerMovementSpeed, pathfindingMaxSteps);
+		var pathNodes = new List<(Vector3, GridCoords)>();
 		var current = _path;
 		while(current != null)
 		{
-			pathNodes.Add(_grid.GridCoordsToGlobal(current.pos));
+			pathNodes.Add(
+				(_grid.GridCoordsToGlobal(current.pos), current.pos
+			));
 			current = current.parent;
 		}
 
@@ -114,6 +128,7 @@ public class GridTest : MonoBehaviour
 			pathNodes.Reverse();
 			_pathNodes = pathNodes;
 			_pathIndex = 0;
+			_pathingTime = 0;
 		}
 
 		_timeSinceLastPathRefresh -= pathRefreshRate;
@@ -123,7 +138,8 @@ public class GridTest : MonoBehaviour
 	{
 		_timeSinceLastGridRefresh += Time.fixedDeltaTime;
 
-		if (_timeSinceLastGridRefresh < gridRefreshRate)
+		if (_timeSinceLastGridRefresh < gridRefreshRate &&
+			(_timeSinceLastPathRefresh < pathRefreshRate || !updatePath))
 			return;
 
 		if (_grid == null)
@@ -150,7 +166,8 @@ public class GridTest : MonoBehaviour
 			{
 				var predictor = projectile.GetPrediction();
 				_grid.LerpMapToGrid(
-					predictor, duration, predictionResolution, debug
+					predictor, duration, predictionResolution,
+					playerRadius * 2, debug
 				);
 			}
 		}

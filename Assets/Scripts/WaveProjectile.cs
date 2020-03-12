@@ -81,7 +81,7 @@ public class WaveProjectile : Projectile, IPredictorEnabled
 	{
 		return new WaveProjectilePrediction(
 			origin: _startPosition,
-			direction: _direction,
+			angle: angle,
 			elapsedTime: ElapsedTime,
 			waveDuration: timeToCompleteWave,
 			waveAmplitude: amplitude,
