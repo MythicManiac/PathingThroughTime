@@ -13,7 +13,7 @@ public class ProjectileEmitter : MonoBehaviour
 
 	public GameObject[] projectilePrefabs;
 
-    public void Update()
+    public void FixedUpdate()
     {
 		timeSinceLastSpawn += Time.fixedDeltaTime;
 

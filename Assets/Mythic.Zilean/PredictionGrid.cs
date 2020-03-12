@@ -6,13 +6,6 @@ using UnityEngine;
 
 namespace Mythic.Zilean
 {
-	public struct GridCoords
-	{
-		public int x;
-		public int t;
-		public int y;
-	}
-
 	public class PredictionGrid
 	{
 		public const float PROJECTILE_SIZE = 1.0f;
@@ -21,6 +14,7 @@ namespace Mythic.Zilean
 		public int GridSize { get; private set; }
 		public float Duration { get; private set; }
 		public float TimeStep { get; private set; }
+		public float VisualHeightScale { get; private set; }
 		public Vector2 GlobalPosition { get; private set; }
 
 		// Caches
@@ -59,14 +53,30 @@ namespace Mythic.Zilean
 
 		public PredictionGrid(
 			float cellSize, int gridSize, float duration, float timeStep,
-			Vector2 globalPosition)
+			Vector2 globalPosition, float visualHeightScale)
 		{
-			RebuildGrid(cellSize, gridSize, duration, timeStep, globalPosition);
+			RebuildGrid(cellSize, gridSize, duration,
+				timeStep, globalPosition, visualHeightScale);
 		}
 
 		public void RebuildGrid(float cellSize, int gridSize, float duration,
-			float timeStep, Vector2 globalPosition)
+			float timeStep, Vector2 globalPosition, float visualHeightScale)
 		{
+			var allMatch = (
+				cellSize == CellSize &&
+				gridSize == GridSize &&
+				duration == Duration &&
+				timeStep == TimeStep &&
+				globalPosition == GlobalPosition &&
+				visualHeightScale == VisualHeightScale
+			);
+
+			if (allMatch)
+			{
+				RecreateGrid();
+				return;
+			}
+
 			CellSize = cellSize;
 			GridSize = gridSize;
 			Duration = duration;
@@ -75,15 +85,9 @@ namespace Mythic.Zilean
 			TimeStepCount = Mathf.RoundToInt(Duration / TimeStep);
 			Height = TimeStep * TimeStepCount;
 			Width = GridSideLength * CellSize;
-			// TODO: Define height better in general.
-			// Right now we sort of assume everything to have a "height" (time dimension)
-			// equivalent to their actual hitbox height, even though that's irrelevant
-			// as 2d objects would not have a hitbox height. Thus, everything visual in
-			// the Y axis actually represents time, and our projectiles should really be
-			// cylinders or something, I'm not entirely sure either how the time stuff
-			// works.
 			GlobalY = Height / 2 - TimeStep / 2;
 			CellSize3D = new Vector3(CellSize, TimeStep, CellSize);
+			VisualHeightScale = visualHeightScale;
 			RecreateGrid();
 
 			_globalCoords = new Vector3[GridSideLength, TimeStepCount, GridSideLength];
@@ -106,22 +110,16 @@ namespace Mythic.Zilean
 
 		public bool IsWithinBounds(GridCoords coords)
 		{
-			return IsWithinBounds(coords.x, coords.t, coords.y);
+			return Utils.IsWithinBounds(in _grid, coords);
 		}
 
 		public bool IsWithinBounds(int x, int t, int y)
 		{
-			return !(
-				x < 0 || t < 0 || y < 0 ||
-				x >= _grid.GetLength(0) ||
-				t >= _grid.GetLength(1) ||
-				y >= _grid.GetLength(2)
-			);
+			return Utils.IsWithinBounds(in _grid, x, t, y);
 		}
 
 		public bool IsWithinCheckBounds(Vector3 pos)
 		{
-			return true;
 			var distance = new Vector3(
 				Mathf.Abs(GlobalPosition.x - pos.x),
 				Mathf.Abs(GlobalY - pos.y),
@@ -139,7 +137,7 @@ namespace Mythic.Zilean
 
 		public Vector3 GridCoordsToGlobal(GridCoords coords)
 		{
-			return GridCoordsToGlobal(coords.x, coords.t, coords.y);
+			return GridCoordsToGlobal(coords.X, coords.T, coords.Y);
 		}
 
 		public Vector3 GridCoordsToGlobal(int x, int t, int y)
@@ -153,13 +151,13 @@ namespace Mythic.Zilean
 
 		public GridCoords GlobalCoordsToGrid(Vector2 position, float time)
 		{
-			return new GridCoords() {
-				x = Mathf.RoundToInt(
+			return new GridCoords(
+				Mathf.RoundToInt(
 					position.x - (GlobalPosition.x - Size / 2) - (CellSize / 2)),
-				t = Mathf.RoundToInt(time / TimeStep),
-				y = Mathf.RoundToInt(
+				Mathf.RoundToInt(time / TimeStep),
+				Mathf.RoundToInt(
 					position.y - (GlobalPosition.y - Size / 2) - (CellSize / 2))
-			};
+			);
 		}
 
 		public void LerpMapToGrid(
@@ -195,12 +193,12 @@ namespace Mythic.Zilean
 			var areaCheckPadding = Mathf.CeilToInt(AreaCheckSize / 2.0f);
 			var timeCheckPadding = Mathf.CeilToInt(TimeCheckSize / 2.0f);
 
-			var minX = gridPosition.x - areaCheckPadding;
-			var maxX = gridPosition.x + areaCheckPadding;
-			var minY = gridPosition.y - areaCheckPadding;
-			var maxY = gridPosition.y + areaCheckPadding;
-			var minTime = gridPosition.t - timeCheckPadding;
-			var maxTime = gridPosition.t + timeCheckPadding;
+			var minX = gridPosition.X - areaCheckPadding;
+			var maxX = gridPosition.X + areaCheckPadding;
+			var minY = gridPosition.Y - areaCheckPadding;
+			var maxY = gridPosition.Y + areaCheckPadding;
+			var minTime = gridPosition.T - timeCheckPadding;
+			var maxTime = gridPosition.T + timeCheckPadding;
 
 			for (var x = minX; x <= maxX; x++)
 				for (var t = minTime; t <= maxTime; t++)
@@ -235,23 +233,33 @@ namespace Mythic.Zilean
 				DrawGridPredictions();
 		}
 
+		public Vector3 ScaleVisual(Vector3 vector)
+		{
+			return new Vector3(
+				vector.x,
+				vector.y * VisualHeightScale,
+				vector.z
+			);
+		}
+
 		public void DrawGridBounds()
 		{
 			Gizmos.color = Color.yellow;
 			Gizmos.DrawWireCube(
-				new Vector3(GlobalPosition.x, GlobalY, GlobalPosition.y),
-				new Vector3(Width, Height, Width)
+				ScaleVisual(new Vector3(GlobalPosition.x, GlobalY, GlobalPosition.y)),
+				ScaleVisual(new Vector3(Width, Height, Width))
 			);
 		}
 
 		public void DrawGridPredictions()
 		{
 			Gizmos.color = Color.red;
+			var size = ScaleVisual(new Vector3(CellSize, TimeStep, CellSize));
 			foreach (var prediction in _gridPredictions)
 			{
 				Gizmos.DrawCube(
-					_globalCoords[prediction.x, prediction.t, prediction.y],
-					new Vector3(CellSize, TimeStep, CellSize)
+					ScaleVisual(_globalCoords[prediction.X, prediction.T, prediction.Y]),
+					size
 				);
 			}
 		}
@@ -261,25 +269,23 @@ namespace Mythic.Zilean
 			Gizmos.color = Color.red;
 			foreach (var prediction in _predictions)
 			{
-				Gizmos.DrawWireSphere(prediction, 0.5f);
+				Gizmos.DrawWireSphere(ScaleVisual(prediction), 0.5f);
 			}
 		}
 
 		public void DrawGrid(bool drawGridFull, bool drawGridEmpty)
 		{
-			Gizmos.color = Color.black;
-			var size = new Vector3(
-				CellSize, TimeStep, CellSize
-			);
+			Gizmos.color = Color.yellow;
+			var size = ScaleVisual(new Vector3(CellSize, TimeStep, CellSize));
 
 			for (var x = 0; x < _grid.GetLength(0); x++)
 				for (var t = 0; t < _grid.GetLength(1); t++)
 					for (var y = 0; y < _grid.GetLength(2); y++)
 					{
 						if (_grid[x, t, y] && drawGridFull)
-							Gizmos.DrawCube(_globalCoords[x, t, y], size);
-						else if (drawGridEmpty)
-							Gizmos.DrawWireCube(_globalCoords[x, t, y], size);
+							Gizmos.DrawCube(ScaleVisual(_globalCoords[x, t, y]), size);
+						if (!_grid[x, t, y] && drawGridEmpty)
+							Gizmos.DrawWireCube(ScaleVisual(_globalCoords[x, t, y]), size);
 					}
 		}
 	}

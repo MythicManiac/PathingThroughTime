@@ -17,31 +17,38 @@ public class GridTest : MonoBehaviour
 	public bool drawGridBounds = true;
 	public bool drawPredictions = true;
 	public bool drawGridPredictions = true;
+	public float visualHeightscale = 1f;
 
 	private PredictionGrid _grid;
+	private float _elapsedTime;
 
     void Start()
     {
 		_grid = new PredictionGrid(
 			cellSize, gridSize, duration, timeStep, new Vector2(
 				transform.position.x, transform.position.z
-			)
+			), visualHeightscale
 		);
     }
 
 	void FixedUpdate()
 	{
+		_elapsedTime += Time.fixedDeltaTime;
+
+		if (_elapsedTime < timeStep)
+			return;
+
 		if (_grid == null)
 			_grid = new PredictionGrid(
 				cellSize, gridSize, duration, timeStep, new Vector2(
 					transform.position.x, transform.position.z
-				)
+				), visualHeightscale
 			);
 
 		_grid.RebuildGrid(
 			cellSize, gridSize, duration, timeStep, new Vector2(
 				transform.position.x, transform.position.z
-			));
+			), visualHeightscale);
 
 		var projectileTypes = new IPredictorEnabled[][] {
 			FindObjectsOfType<LinearProjectile>(),
@@ -59,6 +66,8 @@ public class GridTest : MonoBehaviour
 				);
 			}
 		}
+
+		_elapsedTime -= timeStep;
 	}
 
 	void OnDrawGizmos()
