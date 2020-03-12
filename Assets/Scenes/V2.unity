@@ -349,18 +349,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6404830fd785534abda2b7021d3f844, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  updatePath: 1
   cellSize: 1
   gridSize: 5
   duration: 5
   timeStep: 0.5
   predictionResolution: 0.5
-  gridRefreshRate: 1
-  pathRefreshRate: 1
+  gridRefreshRate: 0.1
+  pathRefreshRate: 0.1
   debug: 1
   drawGridEmpty: 0
-  drawGridFull: 1
+  drawGridFull: 0
   drawGridBounds: 1
-  drawPredictions: 1
+  drawPredictions: 0
   drawGridPredictions: 1
   drawPath: 1
   visualHeightscale: 2
@@ -480,13 +481,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1257014840}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cf00a69217c69964e9d4521b38e4b0c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   spawnInterval: 1
-  spawnRadius: 15
+  spawnRadius: 25
   spawnAmount: 5
   randomSpawnAmount: 1
   projectilePrefabs:

@@ -42,11 +42,10 @@ namespace Mythic.Zilean
 			return $"GridCoords {X}, {T}, {Y}";
 		}
 
-		public float Distance(GridCoords other)
+		public float SpatialDistance(GridCoords other)
 		{
 			return Mathf.Sqrt(
 				Mathf.Pow(X - other.X, 2) +
-				Mathf.Pow(T - other.T, 2) +
 				Mathf.Pow(Y - other.Y, 2)
 			);
 		}

@@ -11,59 +11,57 @@ namespace Mythic.Zilean
 	{
 		public SpacetimePathFindNode parent;
 		public GridCoords pos;
+		public float distanceInLayer;
 		public float distanceToStart;
 		public float distanceToTarget;
 
 		public float Cost
 		{
-			get { return distanceToStart + distanceToTarget; }
+			get { return (distanceToStart + distanceToTarget) * (pos.T + 1); }
 		}
 	}
 
 	public static class SpacetimePathFinder
 	{
-		public static List<GridCoords> GetNeighbourNodes(
-			in bool[,,] grid, GridCoords pos,
-			Dictionary<GridCoords, SpacetimePathFindNode> evaluated
+		public static (int, int, int)[] PossibleNeighbours = new (int, int, int)[] {
+			(-1, 0, 0),
+			(1, 0, 0),
+			(0, 0, -1),
+			(0, 0, 1),
+			(0, 1, 0)
+		};
+
+		public static List<GridCoords> GetReachableNeighbours(
+			in bool[,,] grid, SpacetimePathFindNode current,
+			Dictionary<GridCoords, SpacetimePathFindNode> evaluated,
+			float movementSpeed, float cellSize, float cellTime
 		)
 		{
-			var startX = pos.X - 1;
-			var endX = pos.X + 1;
-			var startY = pos.Y - 1;
-			var endY = pos.Y + 1;
-
+			var pos = current.pos;
 			var result = new List<GridCoords>();
 
-			for (var x = startX; x <= endX; x++)
-				for (var y = startY; y <= endY; y++)
-				{
-					if (!Utils.IsWithinBounds(grid, x, pos.T, y))
-						continue;
-
-					// TODO: Move away from here in case
-					// we want to just associate a higher
-					// cost for going through projectiles
-					if (grid[x, pos.T, y])
-						continue;
-
-					var coords = new GridCoords(x, pos.T, y);
-					if (evaluated.ContainsKey(coords))
-						continue;
-
-					result.Add(coords);
-				}
-		
-			// Travel to next timestep
-			var next = new GridCoords(pos.X, pos.T + 1, pos.Y);
-			if (Utils.IsWithinBounds(grid, next) && !evaluated.ContainsKey(next))
+			foreach(var (x, t, y) in PossibleNeighbours)
 			{
+				var coords = new GridCoords(pos.X + x, pos.T + t, pos.Y + y);
+				if (!Utils.IsWithinBounds(grid, coords))
+					continue;
+
 				// TODO: Move away from here in case
 				// we want to just associate a higher
 				// cost for going through projectiles
-				if (!grid[next.X, next.T, next.Y])
-				{
-					result.Add(next);
-				}
+				if (grid[coords.X, coords.T, coords.Y])
+					continue;
+
+				if (evaluated.ContainsKey(coords))
+					continue;
+
+				var deltaDistance = current.pos.SpatialDistance(coords);
+				var totalDistance = current.distanceInLayer + deltaDistance;
+				var requiredSpeed = totalDistance * cellSize / cellTime;
+				if (requiredSpeed >= movementSpeed)
+					continue;
+
+				result.Add(coords);
 			}
 
 			return result;
@@ -86,13 +84,16 @@ namespace Mythic.Zilean
 				parent = null,
 				pos = start,
 				distanceToStart = 0,
-				distanceToTarget = start.Distance(target)
+				distanceInLayer = 0,
+				distanceToTarget = start.SpatialDistance(target)
 			};
 
 			pendingNodes.Add(startNode.Cost, startNode);
 			pendingNodesByCoords.Add(startNode.pos, startNode);
 
 			var currentStep = 0;
+
+			SpacetimePathFindNode closest = null;
 
 			while(pendingNodes.Count > 0 && currentStep < maxIterations)
 			{
@@ -103,14 +104,28 @@ namespace Mythic.Zilean
 
 				if(current.pos == target)
 					return current;
+				else if (current.pos.T == target.T)
+					if (
+						closest == null ||
+						current.distanceToTarget < closest.distanceToTarget
+					)
+						closest = current;
 
-				var neighbours = GetNeighbourNodes(
-					grid, current.pos, evaluatedNodes);
+				var neighbours = GetReachableNeighbours(
+					grid, current, evaluatedNodes,
+					movementSpeed, cellSize, cellTime);
 
 				foreach(var pos in neighbours)
 				{
+					var distanceDelta = current.pos.SpatialDistance(pos);
+					var distanceInLayer = (
+						current.distanceInLayer + distanceDelta
+					);
+					if (current.pos.T != pos.T)
+						distanceInLayer = 0;
+
 					var distanceToStartViaCurrent = (
-						current.pos.Distance(pos) + current.distanceToStart
+						distanceDelta + current.distanceToStart
 					);
 
 					SpacetimePathFindNode neighbour = null;
@@ -121,6 +136,7 @@ namespace Mythic.Zilean
 						{
 							neighbour.parent = current;
 							neighbour.distanceToStart = distanceToStartViaCurrent;
+							neighbour.distanceInLayer = distanceInLayer;
 						}
 						pendingNodes.RemoveAt(
 							pendingNodes.IndexOfValue(neighbour)
@@ -133,8 +149,9 @@ namespace Mythic.Zilean
 						{
 							parent = current,
 							pos = pos,
+							distanceInLayer = distanceInLayer,
 							distanceToStart = distanceToStartViaCurrent,
-							distanceToTarget = target.Distance(pos),
+							distanceToTarget = target.SpatialDistance(pos),
 						};
 						pendingNodes.Add(neighbour.Cost, neighbour);
 						pendingNodesByCoords.Add(pos, neighbour);
@@ -144,7 +161,7 @@ namespace Mythic.Zilean
 				currentStep += 1;
 			}
 
-			return null;
+			return closest;
 		}
 	}
 }

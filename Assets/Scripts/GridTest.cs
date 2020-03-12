@@ -11,6 +11,7 @@ public class GridTest : MonoBehaviour
 	public float duration = 8;
 	public float timeStep = 1f;
 	public float predictionResolution = 0.5f;
+	public float pathMovementSpeed = 1f;
 
 	public float gridRefreshRate = 1f;
 	public float pathRefreshRate = 1f;
@@ -26,6 +27,8 @@ public class GridTest : MonoBehaviour
 
 	private PredictionGrid _grid;
 	private SpacetimePathFindNode _path;
+	private GridCoords _start;
+	private GridCoords _target;
 	private float _timeSinceLastGridRefresh;
 	private float _timeSinceLastPathRefresh;
 
@@ -36,7 +39,17 @@ public class GridTest : MonoBehaviour
 				transform.position.x, transform.position.z
 			), visualHeightscale
 		);
-    }
+		_start = new GridCoords(
+			0,
+			0,
+			0
+		);
+		_target = new GridCoords(
+			_grid.GridSideLength,
+			_grid.TimeStepCount - 1,
+			_grid.GridSideLength
+		);
+	}
 
 	void FixedUpdate()
 	{
@@ -52,10 +65,22 @@ public class GridTest : MonoBehaviour
 		if (_timeSinceLastPathRefresh < pathRefreshRate)
 			return;
 
-		var start = new GridCoords(0, 0, 0);
-		var end = new GridCoords(
-			_grid.GridSideLength - 1, _grid.TimeStepCount - 1, _grid.GridSideLength - 1);
-		_path = _grid.FindPath(start, end, 1);
+		_target = new GridCoords(
+			_grid.GridSideLength,
+			_grid.TimeStepCount - 1,
+			_grid.GridSideLength
+		);
+		_path = _grid.FindPath(_start, _target, pathMovementSpeed);
+		//var current = _path;
+		//while(current != null)
+		//{
+		//	if (current.pos.T == 0)
+		//	{
+		//		_start = current.pos;
+		//		break;
+		//	}
+		//	current = current.parent;
+		//}
 
 		_timeSinceLastPathRefresh -= pathRefreshRate;
 	}
