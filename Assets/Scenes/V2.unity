@@ -336,7 +336,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &522937030
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -350,17 +350,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cellSize: 1
-  gridSize: 4
+  gridSize: 5
   duration: 5
   timeStep: 0.5
   predictionResolution: 0.5
+  gridRefreshRate: 1
+  pathRefreshRate: 1
   debug: 1
   drawGridEmpty: 0
   drawGridFull: 1
   drawGridBounds: 1
   drawPredictions: 1
   drawGridPredictions: 1
-  visualHeightscale: 1
+  drawPath: 1
+  visualHeightscale: 2
 --- !u!4 &522937031
 Transform:
   m_ObjectHideFlags: 0
@@ -505,7 +508,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1472159346
 MonoBehaviour:
   m_ObjectHideFlags: 0

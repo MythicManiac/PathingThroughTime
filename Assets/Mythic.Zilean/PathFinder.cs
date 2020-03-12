@@ -7,69 +7,81 @@ using UnityEngine;
 
 namespace Mythic.Zilean
 {
+	public class SpacetimePathFindNode
+	{
+		public SpacetimePathFindNode parent;
+		public GridCoords pos;
+		public float distanceToStart;
+		public float distanceToTarget;
+
+		public float Cost
+		{
+			get { return distanceToStart + distanceToTarget; }
+		}
+	}
+
 	public static class SpacetimePathFinder
 	{
-		public class PathFindNode
-		{
-			public PathFindNode parent;
-			public GridCoords pos;
-			public float distanceToStart;
-			public float distanceToTarget;
-
-			public float Cost {
-				get { return distanceToStart + distanceToTarget; }
-			}
-		}
-
 		public static List<GridCoords> GetNeighbourNodes(
 			in bool[,,] grid, GridCoords pos,
-			Dictionary<GridCoords, PathFindNode> evaluated
+			Dictionary<GridCoords, SpacetimePathFindNode> evaluated
 		)
 		{
 			var startX = pos.X - 1;
 			var endX = pos.X + 1;
-			var startT = pos.T;
-			var endT = pos.T + 1;
 			var startY = pos.Y - 1;
 			var endY = pos.Y + 1;
 
 			var result = new List<GridCoords>();
 
 			for (var x = startX; x <= endX; x++)
-				for (var t = startT; t <= endT; t++)
-					for (var y = startY; y <= endY; y++)
-					{
-						if (!Utils.IsWithinBounds(grid, x, t, y))
-							continue;
+				for (var y = startY; y <= endY; y++)
+				{
+					if (!Utils.IsWithinBounds(grid, x, pos.T, y))
+						continue;
 
-						// TODO: Move away from here in case
-						// we want to just associate a higher
-						// cost for going through projectiles
-						if (grid[x, t, y])
-							continue;
+					// TODO: Move away from here in case
+					// we want to just associate a higher
+					// cost for going through projectiles
+					if (grid[x, pos.T, y])
+						continue;
 
-						var coords = new GridCoords(x, t, y);
-						if (evaluated.ContainsKey(coords))
-							continue;
+					var coords = new GridCoords(x, pos.T, y);
+					if (evaluated.ContainsKey(coords))
+						continue;
 
-						result.Add(coords);
-					}
+					result.Add(coords);
+				}
+		
+			// Travel to next timestep
+			var next = new GridCoords(pos.X, pos.T + 1, pos.Y);
+			if (Utils.IsWithinBounds(grid, next) && !evaluated.ContainsKey(next))
+			{
+				// TODO: Move away from here in case
+				// we want to just associate a higher
+				// cost for going through projectiles
+				if (!grid[next.X, next.T, next.Y])
+				{
+					result.Add(next);
+				}
+			}
 
 			return result;
 		}
 
-		public static PathFindNode FindPath(
+
+		public static SpacetimePathFindNode FindPath(
 			in bool[,,] grid, GridCoords start, GridCoords target,
 			float cellSize, float cellTime, float movementSpeed,
 			int maxIterations = 5000)
 		{
-			var evaluatedNodes = new Dictionary<GridCoords, PathFindNode>();
-			var pendingNodes = new SortedList<float, PathFindNode>(
+			var evaluatedNodes = new Dictionary<GridCoords, SpacetimePathFindNode>();
+			var pendingNodes = new SortedList<float, SpacetimePathFindNode>(
 				new DuplicateKeyComparer<float>()
 			);
-			var pendingNodesByCoords = new Dictionary<GridCoords, PathFindNode>();
+			var pendingNodesByCoords = new Dictionary<GridCoords, SpacetimePathFindNode>();
 
-			var startNode = new PathFindNode()
+			var startNode = new SpacetimePathFindNode()
 			{
 				parent = null,
 				pos = start,
@@ -101,7 +113,7 @@ namespace Mythic.Zilean
 						current.pos.Distance(pos) + current.distanceToStart
 					);
 
-					PathFindNode neighbour = null;
+					SpacetimePathFindNode neighbour = null;
 					if (pendingNodesByCoords.ContainsKey(pos))
 					{
 						neighbour = pendingNodesByCoords[pos];
@@ -117,7 +129,7 @@ namespace Mythic.Zilean
 					}
 					else
 					{
-						neighbour = new PathFindNode()
+						neighbour = new SpacetimePathFindNode()
 						{
 							parent = current,
 							pos = pos,

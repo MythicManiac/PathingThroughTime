@@ -12,6 +12,7 @@ namespace Mythic.Zilean
 		int GetLerpLength(float time, float resolution);
 		Vector2 GetPosition(float time);
 		bool DoesOverlapWithCell(Vector3 own, Vector3 other, Vector3 cellSize);
+		float BoundingBoxWidth { get; }
 	}
 
 	public class Collision
@@ -21,9 +22,12 @@ namespace Mythic.Zilean
 			Vector3 cPos, Vector3 cSize
 		)
 		{
+			// This actually ignores the Y/height axis, as that's time in our
+			// case and doesn't follow the same rules
+
 			var cRadius = cSize / 2;
 			if (!(Mathf.Abs(sPos.x - cPos.x) <= sRadius + cRadius.x &&
-				Mathf.Abs(sPos.y - cPos.y) <= sRadius + cRadius.y &&
+				//Mathf.Abs(sPos.y - cPos.y) <= sRadius + cRadius.y &&
 				Mathf.Abs(sPos.z - cPos.z) <= sRadius + cRadius.z
 			))
 				return false;
@@ -31,12 +35,14 @@ namespace Mythic.Zilean
 			var corner = new Vector3(
 				Mathf.Max(
 					cPos.x - cRadius.x, Mathf.Min(sPos.x, cPos.x + cRadius.z)),
-				Mathf.Max(
-					cPos.y - cRadius.y, Mathf.Min(sPos.y, cPos.y + cRadius.y)),
+				0,
+				//Mathf.Max(
+				//	cPos.y - cRadius.y, Mathf.Min(sPos.y, cPos.y + cRadius.y)),
 				Mathf.Max(
 					cPos.z - cRadius.z, Mathf.Min(sPos.z, cPos.z + cRadius.z))
 			);
-			return Vector3.Distance(corner, sPos) <= sRadius;
+			var sphere = new Vector3(sPos.x, 0, sPos.z);
+			return Vector3.Distance(corner, sphere) <= sRadius;
 		}
 	}
 
@@ -51,8 +57,11 @@ namespace Mythic.Zilean
 			Radius = radius;
 		}
 
+		public float BoundingBoxWidth { get { return Radius * 2; } }
+
 		public int GetLerpLength(float time, float resolution)
 		{
+			// TODO: Fix for sub-zero resolution values (e.g. 0.1)
 			return Mathf.CeilToInt(time / resolution);
 		}
 
@@ -86,6 +95,8 @@ namespace Mythic.Zilean
 			Speed = speed;
 			Radius = radius;
 		}
+
+		public float BoundingBoxWidth { get { return Radius * 2; } }
 
 		public int GetLerpLength(float time, float resolution)
 		{
@@ -136,6 +147,8 @@ namespace Mythic.Zilean
 			WaveLength = waveLength;
 			Radius = radius;
 		}
+
+		public float BoundingBoxWidth { get { return Radius * 2; } }
 
 		public int GetLerpLength(float time, float resolution)
 		{

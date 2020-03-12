@@ -5,11 +5,15 @@ using Mythic.Zilean;
 
 public class GridTest : MonoBehaviour
 {
+	public bool updatePath = true;
 	public float cellSize = 1;
 	public int gridSize = 1;
 	public float duration = 8;
 	public float timeStep = 1f;
 	public float predictionResolution = 0.5f;
+
+	public float gridRefreshRate = 1f;
+	public float pathRefreshRate = 1f;
 
 	public bool debug = true;
 	public bool drawGridEmpty = false;
@@ -17,10 +21,13 @@ public class GridTest : MonoBehaviour
 	public bool drawGridBounds = true;
 	public bool drawPredictions = true;
 	public bool drawGridPredictions = true;
+	public bool drawPath = true;
 	public float visualHeightscale = 1f;
 
 	private PredictionGrid _grid;
-	private float _elapsedTime;
+	private SpacetimePathFindNode _path;
+	private float _timeSinceLastGridRefresh;
+	private float _timeSinceLastPathRefresh;
 
     void Start()
     {
@@ -33,9 +40,31 @@ public class GridTest : MonoBehaviour
 
 	void FixedUpdate()
 	{
-		_elapsedTime += Time.fixedDeltaTime;
+		RefreshGrid();
+		if (updatePath)
+			RefreshPath();
+	}
 
-		if (_elapsedTime < timeStep)
+	private void RefreshPath()
+	{
+		_timeSinceLastPathRefresh += Time.fixedDeltaTime;
+
+		if (_timeSinceLastPathRefresh < pathRefreshRate)
+			return;
+
+		var start = new GridCoords(0, 0, 0);
+		var end = new GridCoords(
+			_grid.GridSideLength - 1, _grid.TimeStepCount - 1, _grid.GridSideLength - 1);
+		_path = _grid.FindPath(start, end, 1);
+
+		_timeSinceLastPathRefresh -= pathRefreshRate;
+	}
+
+	private void RefreshGrid()
+	{
+		_timeSinceLastGridRefresh += Time.fixedDeltaTime;
+
+		if (_timeSinceLastGridRefresh < gridRefreshRate)
 			return;
 
 		if (_grid == null)
@@ -66,16 +95,37 @@ public class GridTest : MonoBehaviour
 				);
 			}
 		}
-
-		_elapsedTime -= timeStep;
+		_timeSinceLastGridRefresh -= gridRefreshRate;
 	}
 
-	void OnDrawGizmos()
+	private void OnDrawGizmos()
 	{
-		if(_grid != null && debug)
+		if (_grid != null && debug)
+		{
 			_grid.DrawGizmos(
 				drawGridFull, drawGridEmpty, drawGridBounds,
 				drawPredictions, drawGridPredictions
 			);
+
+			if (drawPath)
+				DrawPath();
+		}
+	}
+
+	private void DrawPath()
+	{
+		Gizmos.color = Color.cyan;
+		var current = _path;
+		var size = _grid.ScaleVisual(
+			new Vector3(_grid.CellSize, _grid.TimeStep, _grid.CellSize)
+		);
+		while (current != null)
+		{
+			Gizmos.DrawCube(
+				_grid.ScaleVisual(_grid.GridCoordsToGlobal(current.pos)),
+				size
+			);
+			current = current.parent;
+		}
 	}
 }

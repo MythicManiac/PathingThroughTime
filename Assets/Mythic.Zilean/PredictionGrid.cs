@@ -8,8 +8,6 @@ namespace Mythic.Zilean
 {
 	public class PredictionGrid
 	{
-		public const float PROJECTILE_SIZE = 1.0f;
-
 		public float CellSize { get; private set; }
 		public int GridSize { get; private set; }
 		public float Duration { get; private set; }
@@ -39,16 +37,6 @@ namespace Mythic.Zilean
 		public float Size
 		{
 			get { return GridSideLength * CellSize; }
-		}
-
-		public int AreaCheckSize
-		{
-			get { return Mathf.CeilToInt(CellSize / PROJECTILE_SIZE); }
-		}
-
-		public int TimeCheckSize
-		{
-			get { return Mathf.CeilToInt(TimeStep / PROJECTILE_SIZE); }
 		}
 
 		public PredictionGrid(
@@ -118,21 +106,29 @@ namespace Mythic.Zilean
 			return Utils.IsWithinBounds(in _grid, x, t, y);
 		}
 
-		public bool IsWithinCheckBounds(Vector3 pos)
+		public bool IsWithinCheckBounds(Vector3 pos, float boundingBoxWidth)
 		{
 			var distance = new Vector3(
 				Mathf.Abs(GlobalPosition.x - pos.x),
 				Mathf.Abs(GlobalY - pos.y),
 				Mathf.Abs(GlobalPosition.y - pos.z)
 			);
-			var collisionDistXZ = (Width + CellSize) / 2;
-			var collisionDistY = (Height + TimeStep) / 2;
+			var collisionDistXZ = (Width + CellSize) / 2 + boundingBoxWidth / 2;
+			var collisionDistY = (Height + TimeStep) / 2 + boundingBoxWidth / 2;
 			if (distance.x <= collisionDistXZ &&
 				distance.y <= collisionDistY &&
 				distance.z <= collisionDistXZ
 			)
 				return true;
 			return false;
+		}
+
+		public SpacetimePathFindNode FindPath(
+			GridCoords source, GridCoords target, float movementSpeed)
+		{
+			return SpacetimePathFinder.FindPath(
+				_grid, source, target, CellSize, TimeStep, movementSpeed
+			);
 		}
 
 		public Vector3 GridCoordsToGlobal(GridCoords coords)
@@ -153,10 +149,12 @@ namespace Mythic.Zilean
 		{
 			return new GridCoords(
 				Mathf.RoundToInt(
-					position.x - (GlobalPosition.x - Size / 2) - (CellSize / 2)),
+					(position.x - (GlobalPosition.x - Size / 2) - (CellSize / 2))
+					/ CellSize),
 				Mathf.RoundToInt(time / TimeStep),
 				Mathf.RoundToInt(
-					position.y - (GlobalPosition.y - Size / 2) - (CellSize / 2))
+					(position.y - (GlobalPosition.y - Size / 2) - (CellSize / 2))
+					/ CellSize)
 			);
 		}
 
@@ -187,11 +185,22 @@ namespace Mythic.Zilean
 					_gridPredictions.Add(gridPosition);
 			}
 
-			if (!IsWithinCheckBounds(position))
+			if (!IsWithinCheckBounds(position, projectile.BoundingBoxWidth))
 				return;
 
-			var areaCheckPadding = Mathf.CeilToInt(AreaCheckSize / 2.0f);
-			var timeCheckPadding = Mathf.CeilToInt(TimeCheckSize / 2.0f);
+			var projectileCellSize = projectile.BoundingBoxWidth / CellSize;
+			var areaCheckPadding = Mathf.CeilToInt(
+				projectileCellSize / 2.0f
+			);
+
+			// TODO: Figure out how this time padding stuff should be actually done
+			// instead of relying on projectile bounds. Bounds might also technically
+			// be a good idea, I really don't know.
+			//var projectileTimeSize = projectile.BoundingBoxWidth / TimeStep;
+			//var timeCheckPadding = Mathf.CeilToInt(
+			//	projectileTimeSize / 2.0f
+			//);
+			var timeCheckPadding = 0;
 
 			var minX = gridPosition.X - areaCheckPadding;
 			var maxX = gridPosition.X + areaCheckPadding;

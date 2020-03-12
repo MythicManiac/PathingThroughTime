@@ -15,7 +15,7 @@ public class TestPathFinding : MonoBehaviour
 	private bool[,,] _grid = new bool[0, 0, 0];
 	private GridCoords _start;
 	private GridCoords _end;
-	private SpacetimePathFinder.PathFindNode _path;
+	private SpacetimePathFindNode _path;
 
 	private void Start()
 	{
