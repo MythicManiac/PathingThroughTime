@@ -61,7 +61,7 @@ namespace Mythic.Zilean
 		public static PathFindNode FindPath(
 			in bool[,,] grid, GridCoords start, GridCoords target,
 			float cellSize, float cellTime, float movementSpeed,
-			int maxIterations = 100)
+			int maxIterations = 5000)
 		{
 			var evaluatedNodes = new Dictionary<GridCoords, PathFindNode>();
 			var pendingNodes = new SortedList<float, PathFindNode>(
@@ -80,7 +80,6 @@ namespace Mythic.Zilean
 			pendingNodes.Add(startNode.Cost, startNode);
 			pendingNodesByCoords.Add(startNode.pos, startNode);
 
-			PathFindNode result = null;
 			var currentStep = 0;
 
 			while(pendingNodes.Count > 0 && currentStep < maxIterations)
@@ -91,10 +90,7 @@ namespace Mythic.Zilean
 				evaluatedNodes[current.pos] = current;
 
 				if(current.pos == target)
-				{
-					result = current;
-					break;
-				}
+					return current;
 
 				var neighbours = GetNeighbourNodes(
 					grid, current.pos, evaluatedNodes);
@@ -136,7 +132,7 @@ namespace Mythic.Zilean
 				currentStep += 1;
 			}
 
-			return result;
+			return null;
 		}
 	}
 }

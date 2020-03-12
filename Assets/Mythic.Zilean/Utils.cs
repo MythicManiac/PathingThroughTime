@@ -37,6 +37,11 @@ namespace Mythic.Zilean
 		public override int GetHashCode() => 
 			Tuple.Create(X, T, Y).GetHashCode();
 
+		public override string ToString()
+		{
+			return $"GridCoords {X}, {T}, {Y}";
+		}
+
 		public float Distance(GridCoords other)
 		{
 			return Mathf.Sqrt(

@@ -477,7 +477,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1257014840}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cf00a69217c69964e9d4521b38e4b0c3, type: 3}
   m_Name: 
@@ -518,8 +518,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4a89c97b51776ec4bb523f5ad3e496ef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  height: 10
-  size: 5
+  height: 15
+  size: 14
+  obstacleFrequency: 28
 --- !u!4 &1472159347
 Transform:
   m_ObjectHideFlags: 0
