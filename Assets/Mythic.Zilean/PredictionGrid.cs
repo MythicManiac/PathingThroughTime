@@ -163,6 +163,10 @@ namespace Mythic.Zilean
 			bool debug)
 		{
 			var predictionCount = predictor.GetLerpLength(duration, resolution);
+			predictionCount = Mathf.Max(
+				predictionCount,
+				Mathf.CeilToInt(duration / TimeStep / resolution)
+			);
 			for (var i = 0; i < predictionCount; i++)
 			{
 				var time = (float)i / predictionCount * duration;

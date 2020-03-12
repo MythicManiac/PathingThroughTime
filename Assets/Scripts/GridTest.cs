@@ -27,6 +27,8 @@ public class GridTest : MonoBehaviour
 
 	private PredictionGrid _grid;
 	private SpacetimePathFindNode _path;
+	private List<Vector3> _pathNodes = new List<Vector3>();
+	private int _pathIndex;
 	private GridCoords _start;
 	private GridCoords _target;
 	private float _timeSinceLastGridRefresh;
@@ -39,16 +41,6 @@ public class GridTest : MonoBehaviour
 				transform.position.x, transform.position.z
 			), visualHeightscale
 		);
-		_start = new GridCoords(
-			0,
-			0,
-			0
-		);
-		_target = new GridCoords(
-			_grid.GridSideLength,
-			_grid.TimeStepCount - 1,
-			_grid.GridSideLength
-		);
 	}
 
 	void FixedUpdate()
@@ -56,6 +48,40 @@ public class GridTest : MonoBehaviour
 		RefreshGrid();
 		if (updatePath)
 			RefreshPath();
+		Move();
+	}
+
+	private void Move()
+	{
+		if (_pathNodes.Count <= 0 || _pathIndex >= _pathNodes.Count)
+		{
+			Debug.Log("No path!");
+			return;
+		}
+
+		var remainingDistance = pathMovementSpeed * Time.fixedDeltaTime;
+
+		while (remainingDistance > 0)
+		{
+			var node = _pathNodes[_pathIndex];
+			var waypointZeroed = new Vector3(node.x, 0, node.z);
+			var positionZeroed = new Vector3(transform.position.x, 0, transform.position.z);
+			var direction = (waypointZeroed - positionZeroed).normalized;
+			var distance = Vector3.Distance(waypointZeroed, positionZeroed);
+			var movementDistance = remainingDistance;
+			if (distance <= remainingDistance)
+			{
+				_pathIndex++;
+				movementDistance = distance;
+				remainingDistance -= movementDistance;
+			}
+			else
+			{
+				remainingDistance = 0;
+			}
+			var movement = direction * movementDistance;
+			transform.position += movement;
+		}
 	}
 
 	private void RefreshPath()
@@ -66,21 +92,29 @@ public class GridTest : MonoBehaviour
 			return;
 
 		_target = new GridCoords(
-			_grid.GridSideLength,
+			gridSize,
 			_grid.TimeStepCount - 1,
-			_grid.GridSideLength
+			gridSize
+		);
+		_start = _grid.GlobalCoordsToGrid(
+			new Vector2(transform.position.x, transform.position.z),
+			0
 		);
 		_path = _grid.FindPath(_start, _target, pathMovementSpeed);
-		//var current = _path;
-		//while(current != null)
-		//{
-		//	if (current.pos.T == 0)
-		//	{
-		//		_start = current.pos;
-		//		break;
-		//	}
-		//	current = current.parent;
-		//}
+		var pathNodes = new List<Vector3>();
+		var current = _path;
+		while(current != null)
+		{
+			pathNodes.Add(_grid.GridCoordsToGlobal(current.pos));
+			current = current.parent;
+		}
+
+		if(pathNodes.Count > 0)
+		{
+			pathNodes.Reverse();
+			_pathNodes = pathNodes;
+			_pathIndex = 0;
+		}
 
 		_timeSinceLastPathRefresh -= pathRefreshRate;
 	}

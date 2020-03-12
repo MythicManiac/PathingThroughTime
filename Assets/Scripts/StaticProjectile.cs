@@ -8,9 +8,19 @@ public interface IPredictorEnabled
 	IPredictionProjectile GetPrediction();
 }
 
-public class StaticProjectile : MonoBehaviour, IPredictorEnabled
+public abstract class Projectile : MonoBehaviour
+{
+	public abstract void SetProperties(Vector3 target, float speed, float lifetime);
+}
+
+public class StaticProjectile : Projectile, IPredictorEnabled
 {
 	public float lifetime;
+
+	public override void SetProperties(Vector3 target, float speed, float lifetime)
+	{
+		this.lifetime = lifetime;
+	}
 
 	public IPredictionProjectile GetPrediction()
 	{

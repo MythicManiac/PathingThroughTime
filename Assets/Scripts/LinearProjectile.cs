@@ -3,26 +3,25 @@ using System.Collections.Generic;
 using UnityEngine;
 using Mythic.Zilean;
 
-public class LinearProjectile : MonoBehaviour, IPredictorEnabled
+public class LinearProjectile : Projectile, IPredictorEnabled
 {
 	public float speed;
 	public float lifetime;
+
+	public override void SetProperties(Vector3 target, float speed, float lifetime)
+	{
+		Direction = (target - transform.position).normalized;
+		Direction = new Vector3(Direction.x, 0, Direction.z);
+		this.speed = speed;
+		this.lifetime = lifetime;
+	}
 
 	public Vector3 Direction { get; private set; }
 
 	void Start()
     {
-		var player = GameObject.FindGameObjectWithTag("Player");
-		if(player)
-		{
-			Direction = (player.transform.position - transform.position).normalized;
-			Direction = new Vector3(Direction.x, 0, Direction.z);
-		}
-		else
-		{
-			Direction = (-transform.position).normalized;
-			Direction = new Vector3(Direction.x, 0, Direction.z);
-		}
+		if (Direction == null)
+			SetProperties(Vector3.zero, speed, lifetime);
     }
 
     void FixedUpdate()

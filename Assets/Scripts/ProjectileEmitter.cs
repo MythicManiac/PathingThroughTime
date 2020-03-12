@@ -9,9 +9,12 @@ public class ProjectileEmitter : MonoBehaviour
 	public int spawnAmount = 1;
 	public bool randomSpawnAmount = false;
 
+	public float projectileSpeed = 12f;
+	public float projectileLifetime = 10f;
+
 	private float timeSinceLastSpawn = 0f;
 
-	public GameObject[] projectilePrefabs;
+	public Projectile[] projectilePrefabs;
 
     public void FixedUpdate()
     {
@@ -47,7 +50,12 @@ public class ProjectileEmitter : MonoBehaviour
 			var spawnPoint = spawnOffset + sectionSize * i;
 			var x = Mathf.Cos(spawnPoint) * spawnRadius;
 			var z = Mathf.Sin(spawnPoint) * spawnRadius;
-			Instantiate(prefab, new Vector3(x, 0, z), Quaternion.identity);
+			var proj = Instantiate(
+				prefab,
+				new Vector3(x + transform.position.x, 0, z + transform.position.z),
+				Quaternion.identity
+			);
+			proj.SetProperties(transform.position, projectileSpeed, projectileLifetime);
 		}
 	}
 }

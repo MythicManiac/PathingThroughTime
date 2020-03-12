@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Mythic.Zilean;
 
-public class WaveProjectile : MonoBehaviour, IPredictorEnabled
+public class WaveProjectile : Projectile, IPredictorEnabled
 {
 	public float lifetime;
 	public float timeToCompleteWave = 1;
@@ -15,6 +15,18 @@ public class WaveProjectile : MonoBehaviour, IPredictorEnabled
 	private Vector2 _startPosition;
 	private Vector2 _direction;
 
+	public override void SetProperties(Vector3 target, float speed, float lifetime)
+	{
+		var ownPos = new Vector2(transform.position.x, transform.position.z);
+		var targetPos = new Vector2(target.x, target.z);
+		var direction = targetPos - ownPos;
+		_direction = direction.normalized;
+		angle = Mathf.Atan2(direction.y, direction.x);
+
+		timeToCompleteWave = Mathf.PI * 2 / speed;
+		this.lifetime = lifetime;
+	}
+
 	private void Start()
 	{
 		_starTime = Time.fixedTime;
@@ -22,8 +34,11 @@ public class WaveProjectile : MonoBehaviour, IPredictorEnabled
 			transform.position.x,
 			transform.position.z
 		);
-		_direction = -_startPosition.normalized;
-		angle = Mathf.Atan2(-_startPosition.y, -_startPosition.x);
+		if(_direction == null)
+		{
+			_direction = -_startPosition.normalized;
+			angle = Mathf.Atan2(-_startPosition.y, -_startPosition.x);
+		}
 	}
 
 	public float ElapsedTime

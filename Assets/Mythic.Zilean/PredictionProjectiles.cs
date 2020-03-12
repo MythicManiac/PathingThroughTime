@@ -61,8 +61,7 @@ namespace Mythic.Zilean
 
 		public int GetLerpLength(float time, float resolution)
 		{
-			// TODO: Fix for sub-zero resolution values (e.g. 0.1)
-			return Mathf.CeilToInt(time / resolution);
+			return 0;
 		}
 
 		public Vector2 GetPosition(float time)
